@@ -140,6 +140,7 @@ public Q_SLOTS:
     void onListWidgetElementsMouseMoveOnItem(QListWidgetItem* item);
     void onSettingsExtendedInformationChanged();
     void onFilterBoxStateChanged(int val);
+    void onShowHideButtonClicked(bool);
     void onListMultiFilterItemChanged(QListWidgetItem* item);
 
 protected:

@@ -25,11 +25,15 @@
 # include <QContextMenuEvent>
 # include <QMenu>
 # include <QPainter>
+# include <QRegularExpression>
 # include <QShortcut>
 # include <QTextCursor>
 #endif
 
 #include <Base/Parameter.h>
+#include <Base/Interpreter.h>
+#include <Base/Exception.h>
+#include <Gui/Command.h>
 
 #include "PythonEditor.h"
 #include "Application.h"
@@ -77,8 +81,16 @@ PythonEditor::PythonEditor(QWidget* parent)
     auto uncomment = new QShortcut(this);
     uncomment->setKey(QKeySequence(QString::fromLatin1("ALT+U")));
 
+    auto executeSelection = new QShortcut(this);
+    executeSelection->setKey(QKeySequence(QString::fromLatin1("Ctrl+Shift+E")));
+
+    auto execInConsole = new QShortcut(this);
+    execInConsole->setKey(QKeySequence(QString::fromLatin1("ALT+SHIFT+P")));
+
     connect(comment, &QShortcut::activated, this, &PythonEditor::onComment);
     connect(uncomment, &QShortcut::activated, this, &PythonEditor::onUncomment);
+    connect(executeSelection, &QShortcut::activated, this, &PythonEditor::onExecuteSelection);
+    connect(execInConsole, &QShortcut::activated, this, &PythonEditor::onExecuteInConsole);
 }
 
 /** Destroys the object and frees any allocated resources */
@@ -153,6 +165,10 @@ void PythonEditor::contextMenuEvent ( QContextMenuEvent * e )
         comment->setShortcut(QKeySequence(QString::fromLatin1("ALT+C")));
         QAction* uncomment = menu->addAction( tr("Uncomment"), this, &PythonEditor::onUncomment);
         uncomment->setShortcut(QKeySequence(QString::fromLatin1("ALT+U")));
+        QAction* executeSelection = menu->addAction(tr("Execute Selection"), this, &PythonEditor::onExecuteSelection);
+        executeSelection->setShortcut(QKeySequence(QString::fromLatin1("Ctrl+Shift+E")));
+        QAction* execInConsole = menu->addAction(tr("Execute in console"), this, &PythonEditor::onExecuteInConsole);
+        execInConsole->setShortcut(QKeySequence(QString::fromLatin1("ALT+Shift+P")));
     }
 
     menu->exec(e->globalPos());
@@ -255,6 +271,125 @@ void PythonEditor::onUncomment()
 
     cursor.endEditBlock();
 }
+
+void PythonEditor::onExecuteSelection()
+{
+    QTextCursor cursor = textCursor();
+    int selStart = cursor.selectionStart();
+    int selEnd = cursor.selectionEnd();
+    QTextBlock block;
+    QStringList lines;
+    QString selectedText;
+    bool multiLine = false;
+
+    if (!cursor.hasSelection()) {
+        // If no selection, use the line the cursor is on.
+        selectedText = cursor.block().text();
+    }
+    else {
+        // Replace paragraph separators with newline \n character.
+        for (block = document()->begin(); block.isValid(); block = block.next()) {
+            int pos = block.position();
+            if (pos >= selStart && pos <= selEnd) {
+                lines << block.text();
+            }
+        }
+
+        multiLine = lines.size() > 1;
+        selectedText = lines.join(QLatin1String("\n"));
+    }
+
+    if (selectedText.isEmpty()) {
+        return;
+    }
+
+    try {
+        if (multiLine) {
+            Base::Interpreter().runString(selectedText.toStdString().c_str());
+        }
+        else {
+            Base::Interpreter().runInteractiveString(selectedText.toStdString().c_str());
+        }
+    }
+    catch (const Base::SystemExitException&) {
+        throw;
+    }
+    catch (const Base::PyException& e) {
+        e.ReportException();
+    }
+    catch (const Base::Exception& e) {
+        qWarning("%s", e.what());
+    }
+}
+
+void PythonEditor::onExecuteInConsole()
+{
+    QTextCursor cursor = textCursor();
+    int selStart = cursor.selectionStart();
+    int selEnd = cursor.selectionEnd();
+    QTextBlock block;
+    QString selectedCode;
+
+    for (block = document()->begin(); block.isValid(); block = block.next()) {
+        int pos = block.position();
+        int off = block.length() - 1;
+        if (pos >= selStart || pos + off >= selStart) {
+            if (pos + 1 > selEnd) {
+                break;
+            }
+
+            QString lineText = block.text();
+            selectedCode.append(lineText + QLatin1String("\n"));
+        }
+    }
+
+    if (!selectedCode.isEmpty()) {
+
+        /** Dedent the block of code so that the first selected
+         *  line has no indentation, but the remaining lines
+         *  keep their indentation relative to that first line.
+         */
+
+        // get the leading whitespace of the first line
+        QStringList lines = selectedCode.split(QLatin1Char('\n'));
+        QString firstLineIndent;
+        for (const QString& line : lines) {
+            if (!line.isEmpty()) {
+                int leadingWhitespace = line.indexOf(QRegularExpression(QLatin1String("\\S")));
+                if (leadingWhitespace > 0) {
+                    firstLineIndent = line.left(leadingWhitespace);
+                }
+                break;
+            }
+        }
+
+        // remove that first line whitespace from all the lines
+        for (QString& line : lines) {
+            if (!line.isEmpty() && line.startsWith(firstLineIndent)) {
+                line.remove(0, firstLineIndent.length());
+            }
+        }
+
+        // join the lines into a single QString so we can execute as a single block
+        QString dedentedCode = lines.join(QLatin1Char('\n'));
+
+        if (!dedentedCode.isEmpty()) {
+            try {
+                Gui::Command::doCommand(Gui::Command::Doc, dedentedCode.toStdString().c_str());
+            }
+            catch (const Base::Exception& e) {
+                QString errorMessage = QString::fromStdString(e.what());
+                Base::Console().Error("Error executing Python code:\n%s\n",
+                                      errorMessage.toUtf8().constData());
+            }
+            catch (...) {
+                Base::Console().Error("An unknown error occurred while executing Python code.\n");
+            }
+        }
+    }
+}
+
+
 
 // ------------------------------------------------------------------------
 

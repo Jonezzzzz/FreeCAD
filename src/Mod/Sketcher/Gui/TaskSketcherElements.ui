@@ -70,6 +70,32 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="showHideButton">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+		 <horstretch>0</horstretch>
+		 <verstretch>0</verstretch>
+		</sizepolicy>
+	   </property>
+	   <property name="minimumSize">
+		<size>
+		 <width>0</width>
+		 <height>0</height>
+	    </size>
+	   </property>
+	   <property name="toolTip">
+	    <string>Show/hide all listed construction elements from 3D view. (same as ticking/unticking all listed construction elements in list below)</string>
+	   </property>
+	   <property name="text">
+		<string/>
+	   </property>
+	   <property name="icon">
+	    <iconset resource="Resources/Sketcher.qrc">
+		 <normaloff>:/icons/Std_ToggleVisibility.svg</normaloff>:/icons/Std_ToggleVisibility.svg</iconset>
+	   </property>
+	  </widget>
+	 </item>
+     <item>
       <widget class="QToolButton" name="settingsButton">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">

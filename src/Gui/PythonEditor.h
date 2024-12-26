@@ -59,6 +59,9 @@ public Q_SLOTS:
      * this line is skipped.
      */
     void onUncomment();
+    /** Executes the selected code in python console. */
+    void onExecuteSelection();
+    void onExecuteInConsole();
     void setFileName(const QString&);
     void startDebug();
 

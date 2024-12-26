@@ -1251,6 +1251,10 @@ void TaskSketcherElements::connectSignals()
                      &QCheckBox::stateChanged,
                      this,
                      &TaskSketcherElements::onFilterBoxStateChanged);
+    QObject::connect(ui->showHideButton,
+                     &QToolButton::clicked,
+                     this,
+                     &TaskSketcherElements::onShowHideButtonClicked);
     QObject::connect(
         ui->settingsButton, &QToolButton::clicked, ui->settingsButton, &QToolButton::showMenu);
     QObject::connect(std::as_const(ui->settingsButton)->actions()[0],
@@ -1286,6 +1290,24 @@ void TaskSketcherElements::onFilterBoxStateChanged(int val)
     ui->filterButton->setEnabled(ui->filterBox->checkState() == Qt::Checked);
     slotElementsChanged();
 }
+
+/*hide all show all button  =====================================================*/
+void TaskSketcherElements::onShowHideButtonClicked(bool val)
+{
+    Q_UNUSED(val)
+
+    using GeometryState = ElementItem::GeometryState;
+    
+    for (int i = 0; i < ui->listWidgetElements->count(); i++) {
+        /*ElementItem* item = static_cast<ElementItem*>(ui->listWidgetElements->item(i));
+        
+        if (item->State == GeometryState::Construction) {
+
+        }*/
+        QListWidgetItem* it = ui->listWidgetElements->item(i);
+    }
+}
+
 
 void TaskSketcherElements::onListMultiFilterItemChanged(QListWidgetItem* item)
 {
