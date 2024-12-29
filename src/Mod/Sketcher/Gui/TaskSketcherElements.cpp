@@ -52,6 +52,7 @@
 #include "Utils.h"
 #include "ViewProviderSketch.h"
 #include "ui_TaskSketcherElements.h"
+#include <Base/Console.h>
 
 // clang-format off
 using namespace SketcherGui;
@@ -567,6 +568,31 @@ ElementView::ElementView(QWidget* parent)
 
 ElementView::~ElementView()
 {}
+
+void ElementView::bridge(ElementItem* item)
+{
+    auto sketchObject = item->getSketchObject();
+    
+    auto geometry = sketchObject->Geometry.getValues();
+    
+    auto geoid = item->ElementNbr;
+    
+    if (geoid >= 0) {
+        auto currentLayer = getSafeGeomLayerId(geometry[geoid]);
+        int layer;
+        if (currentLayer == 0) {
+            layer = 2;
+        }
+        else if (currentLayer == 2) {
+            layer = 0;
+        }
+        else {
+            return;
+        }
+        changeLayer(item, layer);
+    }  
+}
+
 
 void ElementView::changeLayer(int layer)
 {
@@ -1297,17 +1323,17 @@ void TaskSketcherElements::onShowHideButtonClicked(bool val)
     Q_UNUSED(val)
 
     using GeometryState = ElementItem::GeometryState;
-    
-    for (int i = 0; i < ui->listWidgetElements->count(); i++) {
-        /*ElementItem* item = static_cast<ElementItem*>(ui->listWidgetElements->item(i));
-        
-        if (item->State == GeometryState::Construction) {
+    using Layer = ElementItem::Layer;
 
-        }*/
-        QListWidgetItem* it = ui->listWidgetElements->item(i);
+    for (int i = 0; i < ui->listWidgetElements->count(); i++) {
+        ElementItem* item = static_cast<ElementItem*>(ui->listWidgetElements->item(i));
+        if (item->State == GeometryState::Construction) {
+            ElementView* elementView;
+            elementView->bridge(item);
+        }
+        //QListWidgetItem* it = ui->listWidgetElements->item(i);
     }
 }
-
 
 void TaskSketcherElements::onListMultiFilterItemChanged(QListWidgetItem* item)
 {

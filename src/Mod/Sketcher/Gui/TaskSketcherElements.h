@@ -65,6 +65,8 @@ public:
     explicit ElementView(QWidget* parent = nullptr);
     ~ElementView() override;
     ElementItem* itemFromIndex(const QModelIndex& index);
+    void bridge(ElementItem* item);
+
 
 protected:
     void contextMenuEvent(QContextMenuEvent* event) override;
@@ -103,6 +105,7 @@ protected Q_SLOTS:
 
     void onIndexHovered(QModelIndex index);
     void onIndexChecked(QModelIndex, Qt::CheckState state);
+    
 
 Q_SIGNALS:
     void onItemHovered(QListWidgetItem*);

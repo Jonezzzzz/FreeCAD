@@ -31,6 +31,7 @@ namespace Gui {
 
 class PythonSyntaxHighlighter;
 class PythonSyntaxHighlighterP;
+class PythonConsole;
 
 /**
  * Python text editor with syntax highlighting.
@@ -62,6 +63,7 @@ public Q_SLOTS:
     /** Executes the selected code in python console. */
     void onExecuteSelection();
     void onExecuteInConsole();
+    PythonConsole* getPythonConsole() const;
     void setFileName(const QString&);
     void startDebug();
 
@@ -74,6 +76,7 @@ protected:
 private:
     //PythonSyntaxHighlighter* pythonSyntax;
     struct PythonEditorP* d;
+    mutable PythonConsole* pyConsole {nullptr};  // link to the python console
 };
 
 /**
